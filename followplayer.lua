@@ -1,37 +1,32 @@
--- Follow Player TAB
-local FollowTab = Window:NewTab("Follow Player")
-
-local playerButtons = {}
-
--- Function to create a list of players in the Follow tab
-local function createPlayerList(tab)
-    local players = game.Players:GetPlayers()
-    local FollowSection = tab:NewSection("Players")
-
-    for , player in ipairs(players) do
-        local button = FollowSection:NewButton(player.Name, "Follow " .. player.Name, function()
-            if not playerButtons[player.Name] then
-                playerButtons[player.Name] = true
-                button:SetText("Stop Following " .. player.Name)
-                -- Start following the player
-                FollowPlayerScript(player.Name)
-            else
-                playerButtons[player.Name] = false
-                button:SetText("Follow " .. player.Name)
-                -- Logic to stop following the player (if needed)
-            end
-        end)
+-- Core functionality for following a player
+local function findTargetPlayer()
+    for _, player in ipairs(game.Players:GetPlayers()) do
+        if player.Name == targetPlayerName then
+            return player
+        end
     end
+    return nil
 end
 
-createPlayerList(FollowTab)
+local function moveCloserToPlayer()
+    while followScriptRunning do
+        local targetPlayer = findTargetPlayer()
+        if targetPlayer then
+            local follower = game.Players.LocalPlayer.Character
+            if follower then
+                local humanoid = follower:FindFirstChildOfClass("Humanoid")
+                if humanoid then
+                    local targetPosition = targetPlayer.Character and targetPlayer.Character.PrimaryPart and targetPlayer.Character.PrimaryPart.Position
+                    if targetPosition then
+                        local direction = (targetPosition - humanoid.RootPart.Position).unit
+                        local closerPosition = targetPosition - direction * 5
 
-game.Players.PlayerAdded:Connect(function(player)
-    FollowTab:Clear()
-    createPlayerList(FollowTab)
-end)
-
-game.Players.PlayerRemoving:Connect(function(player)
-    FollowTab:Clear()
-    createPlayerList(FollowTab)
-end)
+                        humanoid.RootPart.CFrame = CFrame.new(closerPosition)
+                        wait(0.1)
+                    end
+                end
+            end
+        end
+        wait()
+    end
+end
